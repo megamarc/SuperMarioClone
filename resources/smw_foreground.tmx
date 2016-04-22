@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="75" height="18" tilewidth="16" tileheight="16" nextobjectid="1">
+ <tileset firstgid="1" source="smw_foreground.tsx"/>
+ <layer name="Layer 1" width="75" height="18">
+  <data encoding="base64" compression="zlib">
+   eJztlM8OwiAMh/HfQePFoxrd9KYHdeoD8mg8mk02TG3oBktxO/SXfFkCDJqPbsZoNBqNRpM3VYNGIxHfTyfgTOZeATTGXIDr0EUIpGKQ2NP3U4qr1D6bANPUAkcY7yhXX82AObAwsr6eCJw3A3039KTh+imHK++pwUr7+leoo76uljWWjiNPFvli+0vqPyP5v+L6qa+rssbiMeTJNa4ccuaG7q8tsAP2wAE4AkVgHedIyhXxZBjcKqH+9UgJfU9drjaZa2J8W/p947vouCt6l9w+rXNlD1cR58XU21ZjaJ1Fc9RNaL1j1ka7Cbm6wfMewePXFT4n5ryue//u8wEFhzH8
+  </data>
+ </layer>
+</map>

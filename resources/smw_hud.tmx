@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="50" height="30" tilewidth="8" tileheight="8" nextobjectid="1">
+ <tileset firstgid="1" source="smw_hud.tsx"/>
+ <layer name="Layer 1" width="50" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzt0s0KQEAUhuHxL/azZ82eneLC5tJcmk+jlAWJknqfeuukKWdqjMGVRtktze7bbbxAhSpSsUouzteqUp3q/ezW76nKVH44X6rivXVP3flPa/w9RjWZ/R5/pLc02C3N89f7AAAAAAAAAHhmAVLBBhc=
+  </data>
+ </layer>
+</map>
