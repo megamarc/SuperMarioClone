@@ -1,3 +1,5 @@
+![Screenshot](SuperMarioClone.jpg?raw=true "Screenshot")
+
 Install
 =======================================================================
 Default setup is for a Windows 32-bit OS. If you-re running on a 64-bit OS, please copy the files inside the x64 folder to the main folder, overwritting the two dlls.
