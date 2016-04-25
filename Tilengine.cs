@@ -255,6 +255,9 @@ namespace Tilengine
         [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetLastError")]
         private static extern Error TLN_GetLastError();
 
+        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetAvailableSprite")]
+        private static extern int TLN_GetAvailableSprite();
+
         private Engine (int hres, int vres, int numLayers, int numSprites, int numAnimations)
         {
             int c;
@@ -409,6 +412,19 @@ namespace Tilengine
         {
             set { TLN_SetLastError(value); }
             get { return TLN_GetLastError(); }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public Sprite GetAvailableSprite()
+        {
+            int index = TLN_GetAvailableSprite();
+            if (index >= 0)
+                return Sprites[index];
+            else
+                throw new NotFoundException();
         }
     }
 
@@ -835,9 +851,6 @@ namespace Tilengine
 
         [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetSpritePicture")]
         private static extern int TLN_GetSpritePicture(int nsprite);
-
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetAvailableSprite")]
-        private static extern int TLN_GetAvailableSprite();
 
         [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_EnableSpriteCollision")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]

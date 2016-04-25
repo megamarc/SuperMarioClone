@@ -38,6 +38,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actor.cs" />
+    <Compile Include="Bumper.cs" />
+    <Compile Include="Collect.cs" />
     <Compile Include="Field.cs" />
     <Compile Include="Fixed.cs" />
     <Compile Include="Game.cs" />

@@ -6,6 +6,8 @@
  * ****************************************************************************
 */
 
+using Tilengine;
+
 /// <summary>
 /// Static struct that holds all game-related data
 /// </summary>
@@ -19,6 +21,7 @@ struct Game
 
     static World world;     // world instance
     static Player player;   // player instance
+    public static Spriteset objects;
 
     static int Lives;       // remaining lives
     static int Time;        // remaining time
@@ -31,8 +34,11 @@ struct Game
     /// </summary>
     public static void Init()
     {
+        Actor.CreateList(40);
+
         player = new Player("SuperMario", 0, 16, 16);
         world = new World("smw_foreground", "smw_background");
+        objects = Spriteset.FromFile("Objects");
 
         Lives = 5;
         Time = 255;
@@ -54,7 +60,10 @@ struct Game
     {
         HUD.Deinit();
         world.Delete();
-        player.Delete();
+        objects.Delete();
+        Actor.DeleteList();
+        player = null;
+        world = null;
     }
     
     /// <summary>
@@ -72,7 +81,7 @@ struct Game
         }
 
         world.Update(frame);
-        player.Update(world, frame);
+        Actor.UpdateList(world);
     }
 
     /// <summary>

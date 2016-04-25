@@ -1,0 +1,12 @@
+question = 0 0 16 16
+spinner  = 16 0 16 16
+coin     = 32 0 16 16
+mushroom = 48 0 16 16
+vanish1  = 0 16 16 16
+vanish2  = 16 16 16 16
+vanish3  = 32 16 16 16
+vanish4  = 48 16 16 16
+vanish5  = 64 16 16 16
+vanish6  = 80 16 16 16
+vanish7  = 96 16 16 16
+vanish8  = 112 16 16 16

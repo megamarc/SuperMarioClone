@@ -11,7 +11,7 @@ using Tilengine;
 /// <summary>
 /// Class that holds player state and motion
 /// </summary>
-class Player
+class Player : Actor
 {
     private enum Orientation
     {
@@ -29,8 +29,6 @@ class Player
     static int dvx = runSpeed / timeMove;
     static int dvy = fallSpeed / timeFall;
 
-    int x, y;
-    int width, height;
     int t0Jump;
     int xspeed;
     int yspeed;
@@ -71,25 +69,10 @@ class Player
     /// <summary>
     /// Releases unmanaged resources
     /// </summary>
-    public void Delete()
+    public override void Delete()
     {
         spriteset.Delete();
-    }
-
-    /// <summary>
-    /// Returns horizontal position in world space
-    /// </summary>
-    public int X
-    {
-        get { return Fixed.Get(x); }
-    }
-
-    /// <summary>
-    /// Returns vertical position in world space
-    /// </summary>
-    public int Y
-    {
-        get { return Fixed.Get(y); }
+        base.Delete();
     }
 
     /// <summary>
@@ -97,9 +80,11 @@ class Player
     /// </summary>
     /// <param name="world"></param>
     /// <param name="frame"></param>
-    public void Update(World world, int frame)
+    public override void Update(World world)
     {
         Orientation motion = Orientation.None;
+
+        base.Update(world);
         
         /* andar o correr */
         if (floor)
@@ -213,11 +198,12 @@ class Player
                     yspeed = 0;
                     t0Jump = 0;
                     if (tile.Type == World.Type.Question)
-                        world.SetTile(tile.Row, tile.Col, 51);
+                        new Bumper(world, Game.objects, 0, tile.Row, tile.Col, 51);
                 }
                 else if (tile.Type == World.Type.Coin)
                 {
                     world.ClearTile(tile.Row, tile.Col);
+                    new Collect(world, tile.Col * 16, tile.Row * 16);
                     Game.AddCoin();
                 }
             }
@@ -241,6 +227,7 @@ class Player
                 else if (tile.Type == World.Type.Coin)
                 {
                     world.ClearTile(tile.Row, tile.Col);
+                    new Collect(world, tile.Col * 16, tile.Row * 16);
                     Game.AddCoin();
                 }
             }
@@ -262,6 +249,7 @@ class Player
                 else if (tile.Type == World.Type.Coin)
                 {
                     world.ClearTile(tile.Row, tile.Col);
+                    new Collect(world, tile.Col * 16, tile.Row * 16);
                     Game.AddCoin();
                 }
             }
@@ -283,6 +271,7 @@ class Player
                 else if (tile.Type == World.Type.Coin)
                 {
                     world.ClearTile(tile.Row, tile.Col);
+                    new Collect(world, tile.Col * 16, tile.Row * 16);
                     Game.AddCoin();
                 }
             }
