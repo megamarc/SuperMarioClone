@@ -25,9 +25,8 @@ static class Program
 
         /* main loop */
         int frame = 0;
-        while (Graphics.Window.Active)
+        while (Graphics.Window.Process())
         {
-            Graphics.Window.Process();
             Game.Update(frame);
             Graphics.Window.DrawFrame(frame);
             frame++;

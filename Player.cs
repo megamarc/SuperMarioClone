@@ -13,11 +13,20 @@ using Tilengine;
 /// </summary>
 class Player : Actor
 {
-    private enum Orientation
+    enum Orientation
     {
         None,
         Right,
         Left
+    };
+
+    enum State
+    {
+        Stand,
+        Walk,
+        Jump,
+        Fall,
+        Crouch
     };
 
     static int timeMove = 15;               /* tiempo en el que se alcanza la velocidad de carrera, en frames */
@@ -29,6 +38,7 @@ class Player : Actor
     static int dvx = runSpeed / timeMove;
     static int dvy = fallSpeed / timeFall;
 
+    int x_fix, y_fix;
     int t0Jump;
     int xspeed;
     int yspeed;
@@ -36,6 +46,7 @@ class Player : Actor
     int targetSpeed;
     bool jumping;
     bool floor;
+    State state;
     Orientation orientation;
     Spriteset spriteset;
     Sprite sprite;
@@ -46,10 +57,13 @@ class Player : Actor
     /// </summary>
     /// <param name="name">Base name of the spriteset (png/txt pair)</param>
     /// <param name="index">Sprite index</param>
-    /// <param name="xpos">Initial x coordinate in world space</param>
-    /// <param name="ypos">Initial y coordinate in world space</param>
-    public Player(string name, int index, int xpos, int ypos)
+    /// <param name="x">Initial x coordinate in world space</param>
+    /// <param name="y">Initial y coordinate in world space</param>
+    public Player(string name, int index, int x, int y)
     {
+        this.x = x;
+        this.y = y;
+
         flags = TileFlags.None;
         spriteset = Spriteset.FromFile(name);
         sprite = Graphics.Engine.Sprites[index];
@@ -57,8 +71,9 @@ class Player : Actor
         orientation = Orientation.Right;
         jumping = false;
         floor = true;
-        x = Fixed.Set(xpos);
-        y = Fixed.Set(ypos);
+        x_fix = Fixed.Set(x);
+        y_fix = Fixed.Set(y);
+        state = State.Stand;
 
         SpriteInfo info; 
         spriteset.GetInfo(0, out info);
@@ -85,6 +100,24 @@ class Player : Actor
         Orientation motion = Orientation.None;
 
         base.Update(world);
+
+        switch (state)
+        {
+            case State.Stand:
+                break;
+
+            case State.Walk:
+                break;
+
+            case State.Jump:
+                break;
+
+            case State.Fall:
+                break;
+
+            case State.Crouch:
+                break;
+        }
         
         /* andar o correr */
         if (floor)
@@ -109,17 +142,29 @@ class Player : Actor
             if (xspeed > targetSpeed)
                 xspeed = targetSpeed;
         }
+        else if (floor && xspeed > 0)
+        {
+            xspeed -= dvx;
+            if (xspeed < 0)
+                xspeed = 0;
+        }
 
         /* andar a la izquierda */
-        else if (Graphics.Window.GetInput(Input.Left))
+        if (Graphics.Window.GetInput(Input.Left))
         {
             motion = orientation = Orientation.Left;
             xspeed -= dvx;
             if (xspeed < -targetSpeed)
                 xspeed = -targetSpeed;
         }
+        else if (floor && xspeed < 0)
+        {
+            xspeed += dvx;
+            if (xspeed > 0)
+                xspeed = 0;
+        }
 
-        /* saltar */
+        /* iniciar salto */
         if (Graphics.Window.GetInput(Input.Button_B))
         {
             if (!jumping && floor)
@@ -131,70 +176,55 @@ class Player : Actor
         else if (jumping)
             jumping = false;
 
-        /* impulso */
+        /* salto */
         if (jumping && frame - t0Jump < timeJump)
             yspeed = -jumpSpeed;
 
         /* gravedad */
-        if (!floor)
+        else if (!floor)
         {
             yspeed += dvy;
             if (yspeed > fallSpeed)
                 yspeed = fallSpeed;
         }
 
-        /* sin mover en el suelo: frenado */
-        if (motion == Orientation.None && floor)
-        {
-            if (xspeed > 0)
-            {
-                xspeed -= dvx;
-                if (xspeed < 0)
-                    xspeed = 0;
-            }
-            else if (xspeed < 0)
-            {
-                xspeed += dvx;
-                if (xspeed > 0)
-                    xspeed = 0;
-            }
-        }
-
-        int oldx = Fixed.Get(x);
-        int oldy = Fixed.Get(y);
+        /* posicion actual */
+        int oldx = Fixed.Get(x_fix);
+        int oldy = Fixed.Get(y_fix);
         
-        x += xspeed;
-        y += yspeed;
+        /* actualiza posicion */
+        x_fix += xspeed;
+        y_fix += yspeed;
+        x = Fixed.Get(x_fix);
+        y = Fixed.Get(y_fix);
 
-        int intx = Fixed.Get(x);
-        int inty = Fixed.Get(y);
-        int tmpx = intx;
-        int tmpy = inty;
+        int tmpx = x;
+        int tmpy = y;
 
         /* ajusta posición final */
-        if (intx < 0)
+        if (x < 0)
         {
-            intx = 0;
+            x = 0;
             xspeed = 0;
         }
-        else if (intx > world.Width - 16)
+        else if (x > world.Width - 16)
         {
-            intx = world.Width - 16;
+            x = world.Width - 16;
             xspeed = 0;
         }
 
         /* salto */
-        if (inty < oldy)
+        if (y < oldy)
         {
             floor = false;
             int[] points = { 4, 12 };
             int c;
             for (c = 0; c < points.Length; c++)
             {
-                World.Tile tile = world.GetTile(intx + points[c], inty);
+                World.Tile tile = world.GetTile(x + points[c], y);
                 if (tile.Type == World.Type.Solid || tile.Type == World.Type.Question)
                 {
-                    inty = (inty + 16) & ~15;
+                    y = (y + 16) & ~15;
                     yspeed = 0;
                     t0Jump = 0;
                     if (tile.Type == World.Type.Question)
@@ -213,14 +243,15 @@ class Player : Actor
         else
         {
             int[] points = { 4, 12 };
-            floor = false;
             int c;
+            World.Tile tile;
+            floor = false;
             for (c = 0; c < points.Length; c++)
             {
-                World.Tile tile = world.GetTile(intx + points[c], inty + height);
+                tile = world.GetTile(x + points[c], y + height);
                 if (tile.Type == World.Type.Solid || tile.Type == World.Type.OneWay || tile.Type == World.Type.Question)
                 {
-                    inty &= ~15;
+                    y &= ~15;
                     floor = true;
                     yspeed = 0;
                 }
@@ -234,16 +265,16 @@ class Player : Actor
         }
         
         /* izquierda */
-        if (intx < oldx)
+        if (x < oldx)
         {
             int[] points = {0,8,16,24,31};
             int c;
             for (c = 0; c < points.Length; c++)
             {
-                World.Tile tile = world.GetTile(intx, inty + points[c]);
+                World.Tile tile = world.GetTile(x, y + points[c]);
                 if (tile.Type == World.Type.Solid || tile.Type == World.Type.Question)
                 {
-                    intx = (intx + 16) & ~15;
+                    x = (x + 16) & ~15;
                     xspeed = 0;
                 }
                 else if (tile.Type == World.Type.Coin)
@@ -256,16 +287,16 @@ class Player : Actor
         }
 
         /* derecha */
-        else if (intx > oldx)
+        else if (x > oldx)
         {
             int[] points = { 0, 8, 16, 24, 31 };
             int c;
             for (c = 0; c < points.Length; c++)
             {
-                World.Tile tile = world.GetTile(intx + width, inty + points[c]);
+                World.Tile tile = world.GetTile(x + width, y + points[c]);
                 if (tile.Type == World.Type.Solid || tile.Type == World.Type.Question)
                 {
-                    intx &= ~15;
+                    x &= ~15;
                     xspeed = 0;
                 }
                 else if (tile.Type == World.Type.Coin)
@@ -277,24 +308,24 @@ class Player : Actor
             }
         }
 
-        /* corrige si ha cambiado */
-        if (tmpx != intx)
-            x = Fixed.Set(intx);
-        if (tmpy != inty)
-            y = Fixed.Set(inty);
+        /* reajusta fix si se ha corregido */
+        if (tmpx != x)
+            x_fix = Fixed.Set(x);
+        if (tmpy != y)
+            y_fix = Fixed.Set(y);
 
         /* actualiza mundo */
         if (xspeed > 0)
         {
-            if (intx - world.X > 160)
-                world.X = intx - 160;
+            if (x - world.X > 160)
+                world.X = x - 160;
             if (world.X + Graphics.Hres > world.Width)
                 world.X = world.Width - Graphics.Hres;
         }
         else if (xspeed < 0)
         {
-            if (intx - world.X < 120)
-                world.X = intx - 120;
+            if (x - world.X < 120)
+                world.X = x - 120;
             if (world.X < 0)
                 world.X = 0;
         }
@@ -306,7 +337,7 @@ class Player : Actor
             flags |= TileFlags.FlipX;
         sprite.Flags = flags;
 
-        sprite.SetPosition(intx - world.X, inty - world.Y);
+        sprite.SetPosition(x - world.X, y - world.Y);
 
         /* parado */
         if (xspeed==0 && yspeed==0)

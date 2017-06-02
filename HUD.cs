@@ -23,7 +23,10 @@ struct HUD
     /// </summary>
     public static void Init ()
     {
-        field = new Field(Game.LayerHUD, "smw_hud", "Layer 1");
+        int index = Game.LayerHUD;
+        Layer layer = Graphics.Engine.Layers[index];
+        field = new Field(index, "smw_hud.tmx");
+        layer.SetClip(0, 0, 400, 80);
     }
 
     /// <summary>

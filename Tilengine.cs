@@ -1,10 +1,36 @@
-/******************************************************************************
-*
-* C# Tilengine wrapper
-* 2016 Marc Palacios
+/*
+Tilengine - 2D Graphics library with raster effects
+Copyright (c) 2015-2017 Marc Palacios Domenech (megamarc@hotmail.com)
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification 
+are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation 
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/*
+*****************************************************************************
+* C# Tilengine wrapper - Up to date to library version 1.14
 * http://www.tilengine.org
-*
-******************************************************************************/
+*****************************************************************************
+*/
 
 using System;
 using System.IO;
@@ -23,6 +49,7 @@ namespace Tilengine
     }
 
     public delegate void RasterCallback(int line);
+	public delegate byte BlendFunction(byte src, byte dst);
 
     /// <summary>
     /// 
@@ -86,10 +113,14 @@ namespace Tilengine
     public enum Blend
     {
         None,
-        Mix,
+        Mix25,
+		Mix50,
+		Mix75,
         Add,
         Sub,
-        MaxBlend,
+		Mod,
+		Custom,
+		Mix = Mix50
     }
 
     /// <summary>
@@ -139,6 +170,19 @@ namespace Tilengine
         public int Col;
         public int Xoffset;
         public int Yoffset;
+        public byte Color;
+        public byte Type;
+        public bool Empty;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [StructLayoutAttribute(LayoutKind.Sequential)]
+    public struct SequenceFrame
+    {
+	    public int index;
+	    public int delay;
     }
 
     /// <summary>
@@ -166,6 +210,26 @@ namespace Tilengine
             B = b;
         }
     }
+	
+    /// <summary>
+    /// overlays for CRT effect
+    /// </summary>
+	public enum Overlay
+	{
+		None,
+		ShadowMask,
+		Aperture,
+		Scanlines,
+		Custom
+	}
+	
+    /// <summary>
+    /// pixel mapping for Layer.SetPixelMapping()
+    /// </summary>
+	public struct PixelMap
+	{
+		public ushort dx, dy;
+	}
 
     /// <summary>
     /// Creaton error exception
@@ -194,69 +258,82 @@ namespace Tilengine
 		public Sprite[] Sprites;
 		public Animation[] Animations;
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_Init")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_Init(int hres, int vres, int numlayers, int numsprites, int numanimations);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_Deinit")]
+        [DllImport("Tilengine")]
         private static extern void TLN_Deinit();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetWidth")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetWidth();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetHeight")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetHeight();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetNumObjects")]
+        [DllImport("Tilengine")]
         private static extern uint TLN_GetNumObjects();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetUsedMemory")]
+        [DllImport("Tilengine")]
         private static extern uint TLN_GetUsedMemory();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetVersion")]
+        [DllImport("Tilengine")]
         private static extern uint TLN_GetVersion();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetNumLayers")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetNumLayers();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetNumSprites")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetNumSprites();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetBGColor")]
-        private static extern void TLN_SetBGColor(int r, int g, int b);
+        [DllImport("Tilengine")]
+        private static extern void TLN_SetBGColor(byte r, byte g, byte b);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetBGBitmap")]
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+        private static extern bool TLN_SetBGColorFromTilemap(IntPtr tilemap);
+
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetBGBitmap(IntPtr bitmap);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetBGPalette")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetBGPalette(IntPtr palette);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetRasterCallback")]
+        [DllImport("Tilengine")]
         private static extern void TLN_SetRasterCallback(RasterCallback callback);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetRenderTarget")]
+        [DllImport("Tilengine")]
         private static extern void TLN_SetRenderTarget(byte[] data, int pitch);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_UpdateFrame")]
+        [DllImport("Tilengine")]
         private static extern void TLN_UpdateFrame(int time);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_BeginFrame")]
+        [DllImport("Tilengine")]
         private static extern void TLN_BeginFrame(int frame);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DrawNextScanline")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DrawNextScanline();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetLastError")]
+        [DllImport("Tilengine")]
         private static extern void TLN_SetLastError(Error error);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetLastError")]
+        [DllImport("Tilengine")]
         private static extern Error TLN_GetLastError();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetAvailableSprite")]
+        [DllImport("Tilengine")]
+        private static extern string TLN_GetErrorString(Error error);
+
+        [DllImport("Tilengine")]
         private static extern int TLN_GetAvailableSprite();
+
+        [DllImport("Tilengine")]
+        private static extern void TLN_SetLoadPath(string path);
+		
+        [DllImport("Tilengine")]
+        private static extern void TLN_SetCustomBlendFunction(BlendFunction function);
 
         private Engine (int hres, int vres, int numLayers, int numSprites, int numAnimations)
         {
@@ -354,11 +431,19 @@ namespace Tilengine
         /// <summary>
         /// Sets the background color, that is the color of the pixel when there isn't any layer or sprite at that position
         /// </summary>
-        public Color BackgroundColor
+        public void SetBackgroundColor(Color value)
         {
-            set { TLN_SetBGColor(value.R, value.G, value.B); }
+            TLN_SetBGColor(value.R, value.G, value.B);
         }
-        
+
+        /// <summary>
+        /// Sets the background color from a tilemap, that is the color of the pixel when there isn't any layer or sprite at that position
+        /// </summary>
+        public void SetBackgroundColor(Tilemap tilemap)
+        {
+            TLN_SetBGColorFromTilemap(tilemap.ptr);
+        }
+
         /// <summary>
         /// Sets an optionsl, static bitmap as background instead of a solid color
         /// </summary>
@@ -384,6 +469,24 @@ namespace Tilengine
         public void SetRenderTarget(byte[] data, int pitch)
         {
             TLN_SetRenderTarget(data, pitch);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="callback"></param>
+        public void SetRasterCallback(RasterCallback callback)
+        {
+            TLN_SetRasterCallback(callback);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="function"></param>
+        public void SetCustomBlendFunction(BlendFunction function)
+        {
+            TLN_SetCustomBlendFunction(function);
         }
 
         /// <summary>
@@ -417,6 +520,16 @@ namespace Tilengine
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="error"></param>
+        /// <returns>Returns a string description about the given error</returns>
+        public string GetErrorString(Error error)
+        {
+            return TLN_GetErrorString(error);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <returns></returns>
         public Sprite GetAvailableSprite()
         {
@@ -437,54 +550,57 @@ namespace Tilengine
         private static Window instance;
         private static bool init;
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreateWindow")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_CreateWindow(string overlay, WindowFlags flags);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreateWindowThread")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_CreateWindowThread(string overlay, WindowFlags flags);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetWindowTitle")]
+        [DllImport("Tilengine")]
         private static extern void TLN_SetWindowTitle (string title);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_ProcessWindow")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_ProcessWindow();
         
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_IsWindowActive")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_IsWindowActive();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetInput")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_GetInput(Input id);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetLastInput")]
+        [DllImport("Tilengine")]
         private static extern Input TLN_GetLastInput();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DrawFrame")]
+        [DllImport("Tilengine")]
         private static extern void TLN_DrawFrame(int time);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_WaitRedraw")]
+        [DllImport("Tilengine")]
         private static extern void TLN_WaitRedraw();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DeleteWindow")]
+        [DllImport("Tilengine")]
         private static extern void TLN_DeleteWindow();
+		
+		[DllImport("Tilengine")]
+		private static extern void TLN_EnableCRTEffect(Overlay overlay, byte overlay_factor, byte threshold, byte v0, byte v1, byte v2, byte v3, bool blur, byte glow_factor);
+		
+		[DllImport("Tilengine")]
+		private static extern void TLN_DisableCRTEffect();		
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_EnableBlur")]
-        private static extern void TLN_EnableBlur([MarshalAsAttribute(UnmanagedType.I1)] bool mode);
-
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_Delay")]
+        [DllImport("Tilengine")]
         private static extern void TLN_Delay(uint msecs);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetTicks")]
+        [DllImport("Tilengine")]
         private static extern uint TLN_GetTicks();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_BeginWindowFrame")]
+        [DllImport("Tilengine")]
         private static extern void TLN_BeginWindowFrame(int frame);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_EndWindowFrame")]
+        [DllImport("Tilengine")]
         private static extern void TLN_EndWindowFrame();
 
         /// <summary>
@@ -618,12 +734,28 @@ namespace Tilengine
         }
 
         /// <summary>
-        /// 
+        /// Deprecated, use EnableCRTEffect() instead
         /// </summary>
         public bool Blur
         {
-            set { TLN_EnableBlur(value); }
+            set { return; }
         }
+		
+        /// <summary>
+        /// 
+        /// </summary>
+		public void EnableCRTEffect(Overlay overlay, byte overlay_factor, byte threshold, byte v0, byte v1, byte v2, byte v3, bool blur, byte glow_factor)
+		{
+			TLN_EnableCRTEffect(overlay, overlay_factor, threshold, v0, v1, v2, v3, blur, glow_factor);
+		}
+		
+        /// <summary>
+        /// 
+        /// </summary>
+		public void DisableCRTEffect()
+		{
+			TLN_DisableCRTEffect();
+		}		
 
         /// <summary>
         /// 
@@ -658,48 +790,78 @@ namespace Tilengine
     {
 		internal int index;
 		
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetLayer")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetLayer(int nlayer, IntPtr tileset, IntPtr tilemap);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetLayerPalette")]
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+        private static extern bool TLN_SetLayerMap(int nlayer, IntPtr tilemap);
+
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetLayerPalette(int nlayer, IntPtr palette);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetLayerPosition")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetLayerPosition(int nlayer, int hstart, int vstart);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetLayerScaling")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetLayerScaling(int nlayer, float xfactor, float yfactor);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetLayerTransform")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
-        private static extern bool TLN_SetLayerTransform(int layer, float angle, float dx, float dy, float sx, float sy);
+        private static extern bool TLN_SetLayerTransform(int nlayer, float angle, float dx, float dy, float sx, float sy);
+		
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+		private static extern bool TLN_SetLayerPixelMapping (int nlayer, PixelMap[] table);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetLayerBlendMode")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetLayerBlendMode(int nlayer, Blend mode, byte factor);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetLayerColumnOffset")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetLayerColumnOffset(int nlayer, int[] offset);
+		
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+        private static extern bool TLN_SetLayerClip(int nlayer, int x1, int y1, int x2, int y2);
+		
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+        private static extern bool TLN_DisableLayerClip(int nlayer);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_ResetLayerMode")]
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+        private static extern bool TLN_SetLayerMosaic (int nlayer, int width, int height);
+
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+        private static extern bool TLN_DisableLayerMosaic(int nlayer);
+
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_ResetLayerMode(int nlayer);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DisableLayer")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DisableLayer(int nlayer);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetLayerPalette")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_GetLayerPalette(int nlayer);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetLayerTile")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_GetLayerTile(int nlayer, int x, int y, out TileInfo info);
+
+        [DllImport("Tilengine")]
+        private static extern int TLN_GetLayerWidth(int nlayer);
+        
+        [DllImport("Tilengine")]
+        private static extern int TLN_GetLayerHeight(int nlayer);            
 
         /// <summary>
         /// 
@@ -710,6 +872,16 @@ namespace Tilengine
         public bool Setup(Tileset tileset, Tilemap tilemap)
         {
             return TLN_SetLayer(index, tileset.ptr, tilemap.ptr);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tilemap"></param>
+        /// <returns></returns>
+        public bool SetMap(Tilemap tilemap)
+        {
+            return TLN_SetLayerMap(index, tilemap.ptr);
         }
 
         /// <summary>
@@ -750,6 +922,16 @@ namespace Tilengine
         /// <summary>
         /// 
         /// </summary>
+		/// <param name="">map</param>
+        /// <returns></returns>
+		public bool SetPixelMapping(PixelMap[] map)
+		{
+			return TLN_SetLayerPixelMapping(index, map);
+		}
+		
+        /// <summary>
+        /// 
+        /// </summary>
         /// <returns></returns>
         public bool Reset()
         {
@@ -773,6 +955,57 @@ namespace Tilengine
         public int[] ColumnOffset
         {
             set { TLN_SetLayerColumnOffset(index, value); }
+        }
+		
+        /// <summary>
+        /// 
+        /// </summary>
+		/// <param name="x1"></param>
+		/// <param name="y1"></param>
+		/// <param name="x2"></param>
+		/// <param name="y2"></param>
+		public bool SetClip(int x1, int y1, int x2, int y2)
+		{
+			return TLN_SetLayerClip(index, x1, y1, x2, y2);
+		}
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="rect"></param>
+		/// <returns></returns>
+        public bool SetClip(Rect rect)
+		{
+			return TLN_SetLayerClip(index, rect.X, rect.Y, rect.X + rect.W, rect.Y + rect.H);
+		}
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+        public bool DisableClip()
+		{
+			return TLN_DisableLayerClip(index);
+		}
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <returns></returns>
+        public bool SetMosaic(int width, int height)
+        {
+            return TLN_SetLayerMosaic(index, width, height);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool DisableMosaic()
+        {
+            return TLN_DisableLayerMosaic(index);
         }
 
         /// <summary>
@@ -799,6 +1032,22 @@ namespace Tilengine
         /// <summary>
         /// 
         /// </summary>
+        public int Width
+        {
+            get { return TLN_GetLayerWidth(index); }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int Height
+        {
+            get { return TLN_GetLayerHeight(index); }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <returns></returns>
         public bool Disable()
         {
@@ -813,58 +1062,58 @@ namespace Tilengine
     {
 		internal int index;
 		
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_ConfigSprite")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_ConfigSprite(int nsprite, IntPtr spriteset, TileFlags flags);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetSpriteSet")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetSpriteSet(int nsprite, IntPtr spriteset);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetSpriteFlags")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetSpriteFlags(int nsprite, TileFlags flags);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetSpritePosition")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetSpritePosition(int nsprite, int x, int y);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetSpritePicture")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetSpritePicture(int nsprite, int entry);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetSpritePalette")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetSpritePalette(int nsprite, IntPtr palette);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetSpriteBlendMode")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetSpriteBlendMode(int nsprite, Blend mode, byte factor);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetSpriteScaling")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetSpriteScaling(int nsprite, float sx, float sy);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_ResetSpriteScaling")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_ResetSpriteScaling(int nsprite);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetSpritePicture")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetSpritePicture(int nsprite);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_EnableSpriteCollision")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_EnableSpriteCollision(int nsprite, [MarshalAsAttribute(UnmanagedType.I1)] bool enable);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetSpriteCollision")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_GetSpriteCollision(int nsprite);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DisableSprite")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DisableSprite(int nsprite);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetSpritePalette")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_GetSpritePalette(int nsprite);
 
         /// <summary>
@@ -980,38 +1229,38 @@ namespace Tilengine
     {
 		internal int index;
 		
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetPaletteAnimation")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetPaletteAnimation(int index, IntPtr palette, IntPtr sequence, [MarshalAsAttribute(UnmanagedType.I1)] bool blend);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetPaletteAnimationSource")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetPaletteAnimationSource(int index, IntPtr palette);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetTilemapAnimation")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetTilemapAnimation(int index, int nlayer, IntPtr sequence);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetTilesetAnimation")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetTilesetAnimation(int index, int nlayer, IntPtr sequence);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetSpriteAnimation")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetSpriteAnimation(int index, int nsprite, IntPtr sequence, int loop);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetAnimationState")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_GetAnimationState(int index);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetAnimationDelay")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetAnimationDelay(int index, int delay);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetAvailableAnimation")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetAvailableAnimation();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DisableAnimation")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DisableAnimation(int index);
 
@@ -1104,23 +1353,23 @@ namespace Tilengine
     {
         internal IntPtr ptr;
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreateSpriteset")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CreateSpriteset(int entries, Rect[] rects, byte[] data, int width, int height, int pitch, IntPtr palette);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_LoadSpriteset")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_LoadSpriteset(string name);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CloneSpriteset")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CloneSpriteset(IntPtr src);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetSpriteInfo")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_GetSpriteInfo(IntPtr spriteset, int entry, out SpriteInfo info);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetSpritesetPalette")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_GetSpritesetPalette(IntPtr spriteset);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DeleteSpriteset")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DeleteSpriteset(IntPtr Spriteset);
 
@@ -1215,33 +1464,36 @@ namespace Tilengine
     {
         internal IntPtr ptr;
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreateTileset")]
-        private static extern IntPtr TLN_CreateTileset(int numtiles, int width, int height, IntPtr palette);
+        [DllImport("Tilengine")]
+        private static extern IntPtr TLN_CreateTileset(int numtiles, int width, int height, IntPtr palette, IntPtr sequencepack, byte[] types);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_LoadTileset")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_LoadTileset(string filename);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CloneTileset")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CloneTileset(IntPtr src);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CopyTile")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_CopyTile(IntPtr tileset, int src, int dst);
         
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetTilesetPixels")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetTilesetPixels(IntPtr tileset, int entry, byte[] srcdata, int srcpitch);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetTileWidth")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetTileWidth(IntPtr tileset);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetTileHeight")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetTileHeight(IntPtr tileset);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetTilesetPalette")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_GetTilesetPalette(IntPtr tileset);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DeleteTileset")]
+        [DllImport("Tilengine")]
+        private static extern IntPtr TLN_GetTilesetSequencePack(IntPtr tileset);
+
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DeleteTileset(IntPtr tileset);
 
@@ -1261,9 +1513,11 @@ namespace Tilengine
         /// <param name="width"></param>
         /// <param name="height"></param>
         /// <param name="palette"></param>
-        public Tileset(int numTiles, int width, int height, Palette palette)
+        /// <param name="palette"></param>
+        /// <param name="palette"></param>
+        public Tileset(int numTiles, int width, int height, Palette palette, SequencePack sp, byte[] types)
         {
-            IntPtr retval = TLN_CreateTileset(numTiles, width, height, palette.ptr);
+            IntPtr retval = TLN_CreateTileset(numTiles, width, height, palette.ptr, sp.ptr, types);
             if (retval != IntPtr.Zero)
                 ptr = retval;
             else
@@ -1347,6 +1601,14 @@ namespace Tilengine
         /// <summary>
         /// 
         /// </summary>
+        public SequencePack SequencePack
+        {
+            get { return new SequencePack(TLN_GetTilesetSequencePack(ptr)); }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <returns></returns>
         public bool Delete()
         {
@@ -1363,34 +1625,37 @@ namespace Tilengine
     {
         internal IntPtr ptr;
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreateTilemap")]
-        private static extern IntPtr TLN_CreateTilemap(int rows, int cols, Tile[] tiles);
+        [DllImport("Tilengine")]
+        private static extern IntPtr TLN_CreateTilemap(int rows, int cols, Tile[] tiles, uint bgcolor, Tileset tileset);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_LoadTilemap")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_LoadTilemap(string filename, string layername);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CloneTilemap")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CloneTilemap(IntPtr src);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetTilemapRows")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetTilemapRows(IntPtr tilemap);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetTilemapCols")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetTilemapCols(IntPtr tilemap);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetTilemapTile")]
+        [DllImport("Tilengine")]
+        private static extern IntPtr TLN_GetTilemapTileset(IntPtr tilemap);
+
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_GetTilemapTile(IntPtr tilemap, int row, int col, out Tile tile);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetTilemapTile")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetTilemapTile(IntPtr tilemap, int row, int col, ref Tile tile);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CopyTiles")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_CopyTiles(IntPtr src, int srcrow, int srccol, int rows, int cols, IntPtr dst, int dstrow, int dstcol);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DeleteTilemap")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DeleteTilemap(IntPtr tilemap);
 
@@ -1409,9 +1674,14 @@ namespace Tilengine
         /// <param name="rows"></param>
         /// <param name="cols"></param>
         /// <param name="tiles"></param>
-        public Tilemap(int rows, int cols, Tile[] tiles)
+        /// <param name="bgcolor"></param>
+        /// <param name="tileset"></param>
+        public Tilemap(int rows, int cols, Tile[] tiles, Color bgcolor, Tileset tileset)
         {
-            IntPtr retval = TLN_CreateTilemap(rows, cols, tiles);
+            long color;
+            color = 0xFF000000 + (bgcolor.R << 16) + (bgcolor.G << 8) + bgcolor.B;
+
+            IntPtr retval = TLN_CreateTilemap(rows, cols, tiles, (uint)color, tileset);
             if (retval != IntPtr.Zero)
                 ptr = retval;
             else
@@ -1460,6 +1730,14 @@ namespace Tilengine
         public int Rows
         {
             get { return TLN_GetTilemapRows(ptr); }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Tileset Tileset
+        {
+            get { return new Tileset(TLN_GetTilemapTileset(ptr)); }
         }
 
         /// <summary>
@@ -1521,27 +1799,39 @@ namespace Tilengine
     {
         internal IntPtr ptr;
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreatePalette")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CreatePalette(int entries);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_LoadPalette")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_LoadPalette(string filename);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_ClonePalette")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_ClonePalette(IntPtr src);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetPaletteColor")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetPaletteColor(IntPtr palette, int index, byte r, byte g, byte b);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_MixPalettes")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_MixPalettes(IntPtr src1, IntPtr src2, IntPtr dst, byte factor);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetPaletteData")]
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+        private static extern bool TLN_AddPaletteColor(IntPtr palette, byte r, byte g, byte b, byte start, byte num);
+
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+        private static extern bool TLN_SubPaletteColor(IntPtr palette, byte r, byte g, byte b, byte start, byte num);
+
+        [DllImport("Tilengine")]
+        [return: MarshalAsAttribute(UnmanagedType.I1)]
+        private static extern bool TLN_ModPaletteColor(IntPtr palette, byte r, byte g, byte b, byte start, byte num);
+
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_GetPaletteData(IntPtr palette, int index);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DeletePalette")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DeletePalette(IntPtr palette);
 
@@ -1620,6 +1910,42 @@ namespace Tilengine
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="color"></param>
+        /// <param name="first"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        public bool AddColor(Color color, byte first, byte count)
+        {
+            return TLN_AddPaletteColor(ptr, color.R, color.G, color.B, first, count);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="color"></param>
+        /// <param name="first"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        public bool SubColor(Color color, byte first, byte count)
+        {
+            return TLN_SubPaletteColor(ptr, color.R, color.G, color.B, first, count);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="color"></param>
+        /// <param name="first"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        public bool MulColor(Color color, byte first, byte count)
+        {
+            return TLN_ModPaletteColor(ptr, color.R, color.G, color.B, first, count);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <returns></returns>
         public bool Delete()
         {
@@ -1636,35 +1962,35 @@ namespace Tilengine
     {
         internal IntPtr ptr;
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreateBitmap")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CreateBitmap(int width, int height, int bpp);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_LoadBitmap")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_LoadBitmap(string filename);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CloneBitmap")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CloneBitmap(IntPtr src);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetBitmapWidth")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetBitmapWidth(IntPtr bitmap);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetBitmapHeight")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetBitmapHeight(IntPtr bitmap);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetBitmapDepth")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetBitmapDepth(IntPtr bitmap);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetBitmapPitch")]
+        [DllImport("Tilengine")]
         private static extern int TLN_GetBitmapPitch(IntPtr bitmap);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_GetBitmapPalette")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_GetBitmapPalette(IntPtr bitmap);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_SetBitmapPalette")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetBitmapPalette(IntPtr bitmap, IntPtr palette);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DeleteBitmap")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DeleteBitmap(IntPtr bitmap);
 
@@ -1768,16 +2094,16 @@ namespace Tilengine
     {
         internal IntPtr ptr;
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreateSequence")]
-        private static extern IntPtr TLN_CreateSequence(string name, int delay, int first, int num_frames, int[] data);
+        [DllImport("Tilengine")]
+        private static extern IntPtr TLN_CreateSequence(string name, int target, int num_frames, SequenceFrame[] frames);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreateCycle")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CreateCycle(string name, int num_strips, ColorStrip[] strips);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CloneSequence")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CloneSequence(IntPtr src);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DeleteSequence")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DeleteSequence(IntPtr sequence);
 
@@ -1798,9 +2124,9 @@ namespace Tilengine
         /// <param name="first"></param>
         /// <param name="numFrames"></param>
         /// <param name="data"></param>
-        public Sequence(string name, int delay, int first, int numFrames, int[] data)
+        public Sequence(string name, int target, int numFrames, SequenceFrame[] frames)
         {
-            IntPtr retval = TLN_CreateSequence(name, delay, first, numFrames, data);
+            IntPtr retval = TLN_CreateSequence(name, target, numFrames, frames);
             if (retval != IntPtr.Zero)
                 ptr = retval;
             else
@@ -1854,20 +2180,26 @@ namespace Tilengine
     {
         internal IntPtr ptr;
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_CreateSequencePack")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_CreateSequencePack();
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_LoadSequencePack")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_LoadSequencePack(string filename);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_FindSequence")]
+        [DllImport("Tilengine")]
         private static extern IntPtr TLN_FindSequence(IntPtr sp, string name);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_AddSequenceToPack")]
+        [DllImport("Tilengine")]
+        private static extern IntPtr TLN_GetSequence(IntPtr sp, int index);
+
+        [DllImport("Tilengine")]
+        private static extern int TLN_GetSequencePackCount(IntPtr sp);
+
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_AddSequenceToPack(IntPtr sp, IntPtr sequence);
 
-        [DllImportAttribute("Tilengine.dll", EntryPoint = "TLN_DeleteSequencePack")]
+        [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_DeleteSequencePack(IntPtr sp);
 
@@ -1897,11 +2229,33 @@ namespace Tilengine
         /// <summary>
         /// 
         /// </summary>
+        public int NumSequences
+        {
+            get { return TLN_GetSequencePackCount(ptr); }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
         public Sequence Find(string name)
         {
             IntPtr retval = TLN_FindSequence(ptr, name);
+            if (retval != IntPtr.Zero)
+                return new Sequence(retval);
+            else
+                throw new NotFoundException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public Sequence Get(int index)
+        {
+            IntPtr retval = TLN_GetSequence(ptr, index);
             if (retval != IntPtr.Zero)
                 return new Sequence(retval);
             else

@@ -107,7 +107,7 @@ abstract class Actor
     /// </summary>
     public int X
     {
-        get { return Fixed.Get(x); }
+        get { return x; }
     }
 
     /// <summary>
@@ -115,6 +115,6 @@ abstract class Actor
     /// </summary>
     public int Y
     {
-        get { return Fixed.Get(y); }
+        get { return y; }
     }
 }

@@ -13,7 +13,6 @@ using Tilengine;
 /// </summary>
 struct Field
 {
-    public Tileset Tileset;
     public Tilemap Tilemap;
     public Layer Layer;
     public int Width;
@@ -25,14 +24,14 @@ struct Field
     /// <param name="layer">Layer index</param>
     /// <param name="filename">Base filename of the tmx/tsx/png</param>
     /// <param name="layername">Layer name inside the tmx file</param>
-    public Field(int index, string filename, string layername)
+    public Field(int index, string filename)
     {
         Layer = Graphics.Engine.Layers[index];
-        Tileset = Tileset.FromFile(filename + ".tsx");
-        Tilemap = Tilemap.FromFile(filename + ".tmx", layername);
-        Layer.Setup(Tileset, Tilemap);
-        Width = Tilemap.Cols * Tileset.Width;
-        Height = Tilemap.Rows * Tileset.Height;
+        Tilemap = Tilemap.FromFile(filename, null);
+        Layer.SetMap(Tilemap);
+        Graphics.Engine.SetBackgroundColor(Tilemap);
+        Width = Layer.Width;
+        Height = Layer.Height;
     }
 
     /// <summary>
@@ -40,7 +39,6 @@ struct Field
     /// </summary>
     public void Delete()
     {
-        Tileset.Delete();
         Tilemap.Delete();
     }
 

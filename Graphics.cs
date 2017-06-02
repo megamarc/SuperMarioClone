@@ -24,10 +24,8 @@ struct Graphics
     /// </summary>
     public static void Init()
     {
-        Engine = Engine.Init(Hres, Vres, Game.NumLayers, 20, 0);
-        Window = Window.Create("overlay.bmp", WindowFlags.Vsync);
-        Engine.BackgroundColor = new Color(0, 96, 184);
-        Window.Blur = false;
+        Engine = Engine.Init(Hres, Vres, Game.NumLayers, 20, 2);
+        Window = Window.Create(null, WindowFlags.Vsync);
     }
 
     /// <summary>
@@ -35,7 +33,6 @@ struct Graphics
     /// </summary>
     public static void Deinit()
     {
-        Window.Delete();
         Engine.Deinit();
     }
 }

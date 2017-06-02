@@ -20,6 +20,8 @@ class Bumper : Actor
 
     public Bumper(World world, Spriteset spriteset, int picture, int row, int col, ushort tileIndex)
     {
+        this.x = col * 16;
+        this.y = row * 16;
         this.row = row;
         this.col = col;
         this.tileIndex = tileIndex;
@@ -53,6 +55,6 @@ class Bumper : Actor
 
     void UpdateSprite(World world)
     {
-        sprite.SetPosition((col * 16) - world.X, (row * 16) - motion[frame] - world.Y);
+        sprite.SetPosition(x - world.X, y - motion[frame] - world.Y);
     }
 }

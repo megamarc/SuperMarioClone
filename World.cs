@@ -12,21 +12,15 @@ using Tilengine;
 /// </summary>
 class World
 {
-    const int delay = 10;
-    static int[] coinSequence = { 48, 56, 57, 58, 57};
-    static int[] questionSequence = {49, 60, 61, 62, 63};
-
     Field foreground;   // foreground layer
     Field background;   // background layer
-    Type[] tiles;       // maps tile indexes to their type
-    
+    byte[][] floor;
+        
     public int Width;
     public int Height;
     public int X;
     public int Y;   
-
-    int dueframe;
-    int step;
+    bool ok;
 
     /* tipos de tiles */
     public enum Type : byte
@@ -42,7 +36,7 @@ class World
     /* info de tile */
     public struct Tile
     {
-        public int Index;
+        public ushort Index;
         public int Row;
         public int Col;
         public Type Type;
@@ -51,20 +45,15 @@ class World
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="foregroundName">Base name of the foreground layer files (tmx/tsx/png)</param>
-    /// <param name="backgroundName">Base name of the background layer files </param>
-    public World(string foregroundName, string backgroundName)
+    /// <param name="foregroundName">TMX file with the foreground map</param>
+    /// <param name="backgroundName">TMX file with the background map</param>
+    public World(string foregroundFile, string backgroundFile)
     {
-        foreground = new Field(Game.LayerForeground, foregroundName, "Layer 1");
-        background = new Field(Game.LayerBackground, backgroundName, "Layer 1");
+        foreground = new Field(Game.LayerForeground, foregroundFile);
+        background = new Field(Game.LayerBackground, backgroundFile);
 
         Width = foreground.Width;
         Height = foreground.Height;
-        tiles = new Type[64];
-        tiles[8] = tiles[10] = tiles[11] = tiles[12] = tiles[31] = tiles[45] = tiles[46] = tiles[47] = tiles[50] = tiles[51] = Type.Solid;
-        tiles[32] = tiles[33] = Type.OneWay;
-        tiles[48] = Type.Coin;
-        tiles[49] = Type.Question;
         X = 0;
         Y = 48;
     }
@@ -86,15 +75,6 @@ class World
     {
         foreground.Layer.SetPosition(X, Y);
         background.Layer.SetPosition(X / 2, 80);
-
-        if (frame >= dueframe)
-        {
-            dueframe = frame + delay;
-            Tileset tileset = foreground.Tileset;
-            tileset.CopyTile(coinSequence[step%(coinSequence.Length - 1) + 1], coinSequence[0]);
-            tileset.CopyTile(questionSequence[step%(questionSequence.Length - 1) + 1], questionSequence[0]);
-            step++;
-        }        
     }
 
     /// <summary>
@@ -109,10 +89,7 @@ class World
         tile.Index = tileInfo.Index;
         tile.Row = tileInfo.Row;
         tile.Col = tileInfo.Col;
-        if (tileInfo.Index != 0)
-            tile.Type = tiles[tileInfo.Index - 1];
-        else
-            tile.Type = Type.None;
+        tile.Type = (Type)tileInfo.Type;
         return tile;
     }
 

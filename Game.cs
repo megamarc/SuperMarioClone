@@ -34,23 +34,23 @@ struct Game
     /// </summary>
     public static void Init()
     {
-        Actor.CreateList(40);
-
-        player = new Player("SuperMario", 0, 16, 16);
-        world = new World("smw_foreground", "smw_background");
-        objects = Spriteset.FromFile("Objects");
-
         Lives = 5;
         Time = 255;
         Coins = 0;
         Score = 0;
         frameCount = 0;
 
+        Actor.CreateList(40);
+
         HUD.Init();
         HUD.ShowLives(Lives);
         HUD.ShowTime(Time);
         HUD.ShowCoins(Coins);
         HUD.ShowScore(Score);
+
+        world = new World("smw_foreground.tmx", "smw_background.tmx");
+        objects = Spriteset.FromFile("Objects");
+        player = new Player("SuperMario", 0, 16, 16);
     }
 
     /// <summary>

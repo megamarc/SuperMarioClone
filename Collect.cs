@@ -14,12 +14,11 @@ using Tilengine;
 class Collect : Actor
 {
     Sprite sprite;
-    int sx, sy;
 
     public Collect(World world, int x, int y)
     {
-        sx = x;
-        sy = y;
+        this.x = x;
+        this.y = y;
         sprite = Graphics.Engine.GetAvailableSprite();
         sprite.Setup(Game.objects, TileFlags.None);
         UpdateSprite(world);
@@ -43,6 +42,6 @@ class Collect : Actor
     void UpdateSprite(World world)
     {
         sprite.Picture = 4 + (frame >> 2);
-        sprite.SetPosition(sx - world.X, sy - world.Y);
+        sprite.SetPosition(x - world.X, y - world.Y);
     }
 }
