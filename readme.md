@@ -4,9 +4,13 @@ About
 ================
 Basic implementation of Super Mario World clone in C# using the cross-platform 2D retro graphics engine [Tilengine](https://www.tilengine.org)
 
+**Note**: SuperMarioClone is based on Tilengine v1.14, which is not the most up to date release. Current version 1.15 has some incompatibility that makes this sample unable to run under the new version, please don't update until the incompatibility is fixed.
+
 Install
 ================
-Default setup is for a Windows 32-bit OS. If you-re running on a 64-bit OS, please copy the files inside the x64 folder to the main folder, overwritting the two dlls.
+Before running, you must first copy the suitable Tilengine dlls to the project root folder (where the source filea sree located):
+* In Windows 32-bit, copy files from lib\x86
+* In Windows 64-bit, copy files from lib\x64
 
 Running
 ================

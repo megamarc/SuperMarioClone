@@ -1,24 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperMario", "SuperMario.csproj", "{2997506D-B948-4E7E-AC0A-715C34A4AA90}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuperMario", "SuperMario.csproj", "{CFF29BE0-6E4B-4321-BAE7-86DC950FB497}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
-		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2997506D-B948-4E7E-AC0A-715C34A4AA90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2997506D-B948-4E7E-AC0A-715C34A4AA90}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2997506D-B948-4E7E-AC0A-715C34A4AA90}.Debug|x86.ActiveCfg = Debug|x86
-		{2997506D-B948-4E7E-AC0A-715C34A4AA90}.Debug|x86.Build.0 = Debug|x86
-		{2997506D-B948-4E7E-AC0A-715C34A4AA90}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2997506D-B948-4E7E-AC0A-715C34A4AA90}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2997506D-B948-4E7E-AC0A-715C34A4AA90}.Release|x86.ActiveCfg = Release|x86
-		{2997506D-B948-4E7E-AC0A-715C34A4AA90}.Release|x86.Build.0 = Release|x86
+		{CFF29BE0-6E4B-4321-BAE7-86DC950FB497}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFF29BE0-6E4B-4321-BAE7-86DC950FB497}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFF29BE0-6E4B-4321-BAE7-86DC950FB497}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFF29BE0-6E4B-4321-BAE7-86DC950FB497}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
