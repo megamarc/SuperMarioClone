@@ -27,7 +27,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
 *****************************************************************************
-* C# Tilengine wrapper - Up to date to library version 1.14
+* C# Tilengine wrapper - Up to date to library version 1.15
 * http://www.tilengine.org
 *****************************************************************************
 */
@@ -138,9 +138,11 @@ namespace Tilengine
     /// <summary>
     /// 
     /// </summary>
-    [StructLayoutAttribute(LayoutKind.Sequential)]
-    public struct Rect
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    public struct SpriteData
     {
+        [MarshalAs(UnmanagedType.LPStr, SizeConst = 64)]
+        public string Name;
         public int X;
         public int Y;
         public int W;
@@ -153,7 +155,6 @@ namespace Tilengine
     [StructLayoutAttribute(LayoutKind.Sequential)]
     public struct SpriteInfo
     {
-        public int Offset;
         public int W;
         public int H;
     }
@@ -292,6 +293,9 @@ namespace Tilengine
         [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetBGColorFromTilemap(IntPtr tilemap);
+
+        [DllImport("Tilengine")]
+        private static extern void TLN_DisableBGColor();
 
         [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
@@ -445,7 +449,16 @@ namespace Tilengine
         }
 
         /// <summary>
-        /// Sets an optionsl, static bitmap as background instead of a solid color
+		/// Disales background color rendering. If you know that the last background layer will always
+        /// cover the entire screen, you can disable it to gain some performance
+        /// </summary>
+        public void DisableBackgroundColor()
+        {
+            TLN_DisableBGColor();
+        }
+
+        /// <summary>
+        /// Sets an optional, static bitmap as background instead of a solid color
         /// </summary>
         public Bitmap BackgroundBitmap
         {
@@ -480,6 +493,14 @@ namespace Tilengine
             TLN_SetRasterCallback(callback);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public String LoadPath
+        {
+            set { TLN_SetLoadPath(value); }
+        }
+        
         /// <summary>
         /// 
         /// </summary>
@@ -796,10 +817,6 @@ namespace Tilengine
 
         [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
-        private static extern bool TLN_SetLayerMap(int nlayer, IntPtr tilemap);
-
-        [DllImport("Tilengine")]
-        [return: MarshalAsAttribute(UnmanagedType.I1)]
         private static extern bool TLN_SetLayerPalette(int nlayer, IntPtr palette);
 
         [DllImport("Tilengine")]
@@ -881,7 +898,7 @@ namespace Tilengine
         /// <returns></returns>
         public bool SetMap(Tilemap tilemap)
         {
-            return TLN_SetLayerMap(index, tilemap.ptr);
+            return TLN_SetLayer(index, IntPtr.Zero, tilemap.ptr);
         }
 
         /// <summary>
@@ -942,11 +959,10 @@ namespace Tilengine
         /// 
         /// </summary>
         /// <param name="blend"></param>
-        /// <param name="factor"></param>
         /// <returns></returns>
-        public bool SetBlendMode(Blend blend, byte factor)
+        public bool SetBlendMode(Blend blend)
         {
-            return TLN_SetLayerBlendMode(index, blend, factor);
+            return TLN_SetLayerBlendMode(index, blend, 0);
         }
 
         /// <summary>
@@ -967,16 +983,6 @@ namespace Tilengine
 		public bool SetClip(int x1, int y1, int x2, int y2)
 		{
 			return TLN_SetLayerClip(index, x1, y1, x2, y2);
-		}
-		
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="rect"></param>
-		/// <returns></returns>
-        public bool SetClip(Rect rect)
-		{
-			return TLN_SetLayerClip(index, rect.X, rect.Y, rect.X + rect.W, rect.Y + rect.H);
 		}
 		
 		/// <summary>
@@ -1354,7 +1360,7 @@ namespace Tilengine
         internal IntPtr ptr;
 
         [DllImport("Tilengine")]
-        private static extern IntPtr TLN_CreateSpriteset(int entries, Rect[] rects, byte[] data, int width, int height, int pitch, IntPtr palette);
+        private static extern IntPtr TLN_CreateSpriteset(IntPtr bitmap, SpriteData[] rects, int entries);
 
         [DllImport("Tilengine")]
         private static extern IntPtr TLN_LoadSpriteset(string name);
@@ -1368,6 +1374,9 @@ namespace Tilengine
 
         [DllImport("Tilengine")]
         private static extern IntPtr TLN_GetSpritesetPalette(IntPtr spriteset);
+
+        [DllImport("Tilengine")]
+        private static extern int TLN_FindSpritesetSprite(IntPtr spriteset, string name);
 
         [DllImport("Tilengine")]
         [return: MarshalAsAttribute(UnmanagedType.I1)]
@@ -1385,16 +1394,11 @@ namespace Tilengine
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="entries"></param>
-        /// <param name="rects"></param>
+        /// <param name="bitmap"></param>
         /// <param name="data"></param>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
-        /// <param name="pitch"></param>
-        /// <param name="palette"></param>
-        public Spriteset (int entries, Rect[] rects, byte[] data, int width, int height, int pitch, Palette palette)
+        public Spriteset (Bitmap bitmap, SpriteData[] data)
         {
-            IntPtr retval = TLN_CreateSpriteset (entries, rects, data, width, height, pitch, palette.ptr);
+            IntPtr retval = TLN_CreateSpriteset(bitmap.ptr, data, data.Length);
             if (retval != IntPtr.Zero)
                 ptr = retval;
             else
@@ -1445,6 +1449,16 @@ namespace Tilengine
         public Palette Palette
         {
             get { return new Palette(TLN_GetSpritesetPalette(ptr)); }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public int FindSprite(string name)
+        {
+            return TLN_FindSpritesetSprite(ptr, name);
         }
 
         /// <summary>
@@ -2122,11 +2136,10 @@ namespace Tilengine
         /// <param name="name"></param>
         /// <param name="delay"></param>
         /// <param name="first"></param>
-        /// <param name="numFrames"></param>
         /// <param name="data"></param>
-        public Sequence(string name, int target, int numFrames, SequenceFrame[] frames)
+        public Sequence(string name, int target, SequenceFrame[] frames)
         {
-            IntPtr retval = TLN_CreateSequence(name, target, numFrames, frames);
+            IntPtr retval = TLN_CreateSequence(name, target, frames.Length, frames);
             if (retval != IntPtr.Zero)
                 ptr = retval;
             else
@@ -2137,11 +2150,10 @@ namespace Tilengine
         /// 
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="numStrips"></param>
         /// <param name="strips"></param>
-        public Sequence(string name, int numStrips, ColorStrip[] strips)
+        public Sequence(string name, ColorStrip[] strips)
         {
-            IntPtr retval = TLN_CreateCycle(name, numStrips, strips);
+            IntPtr retval = TLN_CreateCycle(name, strips.Length, strips);
             if (retval != IntPtr.Zero)
                 ptr = retval;
             else
