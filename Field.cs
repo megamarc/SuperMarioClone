@@ -45,22 +45,22 @@ struct Field
     /// <summary>
     /// Sets a tile in the tilemap
     /// </summary>
-    public bool SetTile(int row, int col, ushort index)
+    public void SetTile(int row, int col, ushort index)
     {
         Tilengine.Tile tile;
         tile.flags = 0;
         tile.index = (ushort)(index + 1);
-        return Tilemap.SetTile(row, col, ref tile);
+        Tilemap.SetTile(row, col, ref tile);
     }
 
     /// <summary>
     /// Clears a tile in the tilemap as empty
     /// </summary>
-    public bool ClearTile(int row, int col)
+    public void ClearTile(int row, int col)
     {
         Tilengine.Tile tile;
         tile.flags = 0;
         tile.index = 0;
-        return Tilemap.SetTile(row, col, ref tile);
+        Tilemap.SetTile(row, col, ref tile);
     }
 }

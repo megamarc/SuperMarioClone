@@ -14,13 +14,11 @@ class World
 {
     Field foreground;   // foreground layer
     Field background;   // background layer
-    byte[][] floor;
         
     public int Width;
     public int Height;
     public int X;
     public int Y;   
-    bool ok;
 
     /* tipos de tiles */
     public enum Type : byte
@@ -93,13 +91,13 @@ class World
         return tile;
     }
 
-    public bool SetTile(int row, int col, ushort index)
+    public void SetTile(int row, int col, ushort index)
     {
-        return foreground.SetTile(row, col, index);
+        foreground.SetTile(row, col, index);
     }
 
-    public bool ClearTile(int row, int col)
+    public void ClearTile(int row, int col)
     {
-        return foreground.ClearTile(row, col);
+        foreground.ClearTile(row, col);
     }
 }
