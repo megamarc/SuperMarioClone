@@ -160,7 +160,7 @@ namespace Tilengine
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public struct SpriteData
     {
-        [MarshalAs(UnmanagedType.LPStr, SizeConst = 64)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
         public string Name;
         public int X;
         public int Y;
@@ -233,7 +233,7 @@ namespace Tilengine
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public struct SequenceInfo
     {
-        [MarshalAs(UnmanagedType.LPStr, SizeConst = 32)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
         public string Name;	    // sequence name
         public int NumFrames;	// number of frames
     }
@@ -374,7 +374,7 @@ namespace Tilengine
         private static extern Error TLN_GetLastError();
 
         [DllImport("Tilengine")]
-        private static extern string TLN_GetErrorString(Error error);
+        private static extern IntPtr TLN_GetErrorString(Error error);
 
         [DllImport("Tilengine")]
         private static extern int TLN_GetAvailableSprite();
@@ -584,8 +584,8 @@ namespace Tilengine
             if (success == false)
             {
                 Error error = TLN_GetLastError();
-                string name = TLN_GetErrorString(error);
-                throw new TilengineException(name);
+                IntPtr intptr = TLN_GetErrorString(error);
+                throw new TilengineException(System.Runtime.InteropServices.Marshal.PtrToStringAnsi(intptr));
             }
         }
 
