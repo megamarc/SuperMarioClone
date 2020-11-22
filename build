@@ -1,0 +1,2 @@
+#!/bin/bash
+mcs *.cs -out:resources/smc
