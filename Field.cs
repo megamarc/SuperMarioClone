@@ -2,7 +2,7 @@
  * ****************************************************************************
  *  Super Mario Clone
  *      Tilengine based super mario implementation, written in C#
- *      Marc Palacios, 2016
+ *      Marc Palacios, 2016-2025
  * ****************************************************************************
 */
 
@@ -28,7 +28,7 @@ struct Field
     {
         Layer = Graphics.Engine.Layers[index];
         Tilemap = Tilemap.FromFile(filename, null);
-        Layer.SetMap(Tilemap);
+        Layer.Tilemap = Tilemap;
         Graphics.Engine.SetBackgroundColor(Tilemap);
         Width = Layer.Width;
         Height = Layer.Height;
@@ -37,9 +37,9 @@ struct Field
     /// <summary>
     /// Releases unmanaged resources
     /// </summary>
-    public void Delete()
+    public void Dispose()
     {
-        Tilemap.Delete();
+        Tilemap.Dispose();
     }
 
     /// <summary>

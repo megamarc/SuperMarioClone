@@ -2,7 +2,7 @@
  * ****************************************************************************
  *  Super Mario Clone
  *      Tilengine based super mario implementation, written in C#
- *      Marc Palacios, 2016
+ *      Marc Palacios, 2016-2025
  * ****************************************************************************
 */
 
@@ -28,7 +28,7 @@ static class Program
         while (Graphics.Window.Process())
         {
             Game.Update(frame);
-            Graphics.Window.DrawFrame(frame);
+            Graphics.Window.DrawFrame();
             frame++;
         }
 

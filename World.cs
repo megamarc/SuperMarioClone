@@ -2,15 +2,16 @@
  * ****************************************************************************
  *  Super Mario Clone
  *      Tilengine based super mario implementation, written in C#
- *      Marc Palacios, 2016
+ *      Marc Palacios, 2016-2025
  * ****************************************************************************
 */
 using Tilengine;
+using System;
 
 /// <summary>
 /// Class that holds world state
 /// </summary>
-class World
+class World : IDisposable
 {
     Field foreground;   // foreground layer
     Field background;   // background layer
@@ -59,10 +60,10 @@ class World
     /// <summary>
     /// Release unmanaged resources
     /// </summary>
-    public void Delete()
+    public void Dispose()
     {
-        foreground.Delete();
-        background.Delete();
+        foreground.Dispose();
+        background.Dispose();
     }
 
     /// <summary>

@@ -2,14 +2,16 @@
  * ****************************************************************************
  *  Super Mario Clone
  *      Tilengine based super mario implementation, written in C#
- *      Marc Palacios, 2016
+ *      Marc Palacios, 2016-2025
  * ****************************************************************************
 */
 
+using System;
+
 /// <summary>
-/// Base class for any actor entity. Derived classes must override Update() and Delete() methods
+/// Base class for any actor entity. Derived classes must override Update() and Dispose() methods
 /// </summary>
-abstract class Actor
+abstract class Actor : IDisposable
 {
     static Actor[] list;
     int index;
@@ -72,7 +74,7 @@ abstract class Actor
         foreach (Actor actor in list)
         {
             if (actor != null)
-                actor.Delete();
+                actor.Dispose();
         }
         list = null;
     }
@@ -97,7 +99,7 @@ abstract class Actor
     /// <summary>
     /// Called on actor deletion. Must be overriden by derived classes
     /// </summary>
-    public virtual void Delete()
+    public virtual void Dispose()
     {
         Actor.Remove(this);
     }

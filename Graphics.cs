@@ -2,7 +2,7 @@
  * ****************************************************************************
  *  Super Mario Clone
  *      Tilengine based super mario implementation, written in C#
- *      Marc Palacios, 2016
+ *      Marc Palacios, 2016-2025
  * ****************************************************************************
 */
 
@@ -25,7 +25,7 @@ struct Graphics
     public static void Init()
     {
         Engine = Engine.Init(Hres, Vres, Game.NumLayers, 20, 2);
-        Window = Window.Create(null, WindowFlags.Vsync);
+        Window = Window.Create(WindowFlags.Vsync);
     }
 
     /// <summary>
@@ -33,6 +33,6 @@ struct Graphics
     /// </summary>
     public static void Deinit()
     {
-        Engine.Deinit();
+        Engine.Dispose();
     }
 }

@@ -2,7 +2,7 @@
  * ****************************************************************************
  *  Super Mario Clone
  *      Tilengine based super mario implementation, written in C#
- *      Marc Palacios, 2016
+ *      Marc Palacios, 2016-2025
  * ****************************************************************************
 */
 
@@ -59,8 +59,8 @@ struct Game
     public static void Deinit()
     {
         HUD.Deinit();
-        world.Delete();
-        objects.Delete();
+        world.Dispose();
+        objects.Dispose();
         Actor.DeleteList();
         player = null;
         world = null;

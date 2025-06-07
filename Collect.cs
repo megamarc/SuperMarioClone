@@ -2,7 +2,7 @@
  * ****************************************************************************
  *  Super Mario Clone
  *      Tilengine based super mario implementation, written in C#
- *      Marc Palacios, 2016
+ *      Marc Palacios, 2016-2025
  * ****************************************************************************
 */
 
@@ -20,7 +20,7 @@ class Collect : Actor
         this.x = x;
         this.y = y;
         sprite = Graphics.Engine.GetAvailableSprite();
-        sprite.Setup(Game.objects, TileFlags.None);
+        sprite.Setup(Game.objects, SpriteFlags.None);
         UpdateSprite(world);
     }
 
@@ -30,12 +30,12 @@ class Collect : Actor
         if (frame < 32)
             UpdateSprite(world);
         else
-            Delete();
+            Dispose();
     }
 
-    public override void Delete()
+    public override void Dispose()
     {
-        base.Delete();
+        base.Dispose();
         sprite.Disable();
     }
 

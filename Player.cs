@@ -2,7 +2,7 @@
  * ****************************************************************************
  *  Super Mario Clone
  *      Tilengine based super mario implementation, written in C#
- *      Marc Palacios, 2016
+ *      Marc Palacios, 2016-2025
  * ****************************************************************************
 */
 
@@ -50,7 +50,7 @@ class Player : Actor
     Orientation orientation;
     Spriteset spriteset;
     Sprite sprite;
-    TileFlags flags;
+    SpriteFlags flags;
 
     /// <summary>
     /// Constructor
@@ -64,7 +64,7 @@ class Player : Actor
         this.x = x;
         this.y = y;
 
-        flags = TileFlags.None;
+        flags = SpriteFlags.None;
         spriteset = Spriteset.FromFile(name);
         sprite = Graphics.Engine.Sprites[index];
         sprite.Setup(spriteset, flags);
@@ -84,10 +84,10 @@ class Player : Actor
     /// <summary>
     /// Releases unmanaged resources
     /// </summary>
-    public override void Delete()
+    public override void Dispose()
     {
-        spriteset.Delete();
-        base.Delete();
+        spriteset.Dispose();
+        base.Dispose();
     }
 
     /// <summary>
@@ -332,10 +332,10 @@ class Player : Actor
 
         /* dibuja */
         if (orientation == Orientation.Right)
-            flags &= ~TileFlags.FlipX;
+            flags &= ~SpriteFlags.FlipX;
         else if (orientation == Orientation.Left)
-            flags |= TileFlags.FlipX;
-        sprite.Flags = flags;
+            flags |= SpriteFlags.FlipX;
+        sprite.SetFlags(flags);
 
         sprite.SetPosition(x - world.X, y - world.Y);
 

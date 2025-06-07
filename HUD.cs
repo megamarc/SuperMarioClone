@@ -2,7 +2,7 @@
  * ****************************************************************************
  *  Super Mario Clone
  *      Tilengine based super mario implementation, written in C#
- *      Marc Palacios, 2016
+ *      Marc Palacios, 2016-2025
  * ****************************************************************************
 */
 
@@ -26,7 +26,7 @@ struct HUD
         int index = Game.LayerHUD;
         Layer layer = Graphics.Engine.Layers[index];
         field = new Field(index, "smw_hud.tmx");
-        layer.SetClip(0, 0, 400, 80);
+        layer.EnableWindow(0, 0, 400, 80);
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ struct HUD
     /// </summary>
     public static void Deinit()
     {
-        field.Delete();
+        field.Dispose();
     }
     
     /// <summary>
